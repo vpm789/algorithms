@@ -4,12 +4,18 @@ import java.util.Arrays;
 
 public class IntListImpl implements IntList {
     private Integer[] arr2;
+    private int freeSize = 2;
 
     public IntListImpl() {
-        this.arr2 = new Integer[]{};
+        this.arr2 = new Integer[freeSize];
     }
 
-    public void sortSelection(int[] arr) {
+    private int grow(int currentSize) {
+        arr2 = Arrays.copyOf(arr2, (int) (arr2.length * 1.5));
+        return arr2.length - currentSize;
+    }
+
+    private void sortSelection(int[] arr) {
         for (int i = 0; i < arr.length - 1; i++) {
             int minElementIndex = i;
             for (int j = i + 1; j < arr.length; j++) {
@@ -21,30 +27,86 @@ public class IntListImpl implements IntList {
         }
     }
 
+    public static void quickSort(int[] arr, int begin, int end) {
+        if (begin < end) {
+            int partitionIndex = partition(arr, begin, end);
+
+            quickSort(arr, begin, partitionIndex - 1);
+            quickSort(arr, partitionIndex + 1, end);
+        }
+    }
+
+    private static int partition(int[] arr, int begin, int end) {
+        int pivot = arr[end];
+        int i = (begin - 1);
+
+        for (int j = begin; j < end; j++) {
+            if (arr[j] <= pivot) {
+                i++;
+
+                swapElements(arr, i, j);
+            }
+        }
+
+        swapElements(arr, i + 1, end);
+        return i + 1;
+    }
+
     private static void swapElements(int[] arr, int indexA, int indexB) {
         int tmp = arr[indexA];
         arr[indexA] = arr[indexB];
         arr[indexB] = tmp;
     }
 
+    public boolean contains(int[] arr, int element) {
+        int min = 0;
+        int max = arr.length - 1;
+
+//        sortSelection(arr);
+        quickSort(arr, 1, arr.length - 1);
+
+        while (min <= max) {
+            int mid = (min + max) / 2;
+
+            if (element == arr[mid]) {
+                return true;
+            }
+
+            if (element < arr[mid]) {
+                max = mid - 1;
+            } else {
+                min = mid + 1;
+            }
+        }
+        return false;
+    }
+
     @Override
     public Integer add(Integer item) {
+        if (freeSize == 0) {
+            freeSize = grow(arr2.length);
+        }
         validateItem(item);
-        arr2 = Arrays.copyOf(arr2, arr2.length + 1);
-        arr2[arr2.length - 1] = item;
+        arr2[arr2.length - freeSize] = item;
+        freeSize--;
         return item;
     }
 
     @Override
     public Integer add(int index, Integer item) {
+        if (freeSize == 0) {
+            freeSize = grow(arr2.length);
+        }
         validateIndex(index);
         validateItem(item);
         if (index == arr2.length - 1) {
             add(item);
+            freeSize--;
             return item;
         }
         System.arraycopy(arr2, index, arr2, index + 1, arr2.length - index);
         arr2[index] = item;
+        freeSize--;
         return item;
     }
 
@@ -68,7 +130,7 @@ public class IntListImpl implements IntList {
         validateIndex(index);
         Integer item = arr2[index];
         if (index != arr2.length - 1) {
-            System.arraycopy(arr2, index + 1, arr2, index, arr2.length-index);
+            System.arraycopy(arr2, index + 1, arr2, index, arr2.length - index);
         }
         return item;
     }
@@ -78,25 +140,7 @@ public class IntListImpl implements IntList {
         return indexOf(item) != -1;
     }
 
-    public boolean contains(int[] arr, int element) {
-        int min = 0;
-        int max = arr.length - 1;
 
-        while (min <= max) {
-            int mid = (min + max) / 2;
-
-            if (element == arr[mid]) {
-                return true;
-            }
-
-            if (element < arr[mid]) {
-                max = mid - 1;
-            } else {
-                min = mid + 1;
-            }
-        }
-        return false;
-    }
     @Override
     public int indexOf(Integer item) {
         for (int i = 0; i < arr2.length; i++) {
@@ -151,6 +195,12 @@ public class IntListImpl implements IntList {
     public void validateItem(Integer item) {
         if (item == null) {
             throw new NullItemException();
+        }
+    }
+
+    public void validateSize(Integer size) {
+        if (size == 0) {
+            throw new SizeOutException();
         }
     }
 
